@@ -299,15 +299,28 @@ export default function GamePage() {
         return (
             <>
             <ToastContainer toasts={toasts} />
-            <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-4 relative overflow-hidden">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px]"></div>
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-600/10 blur-[120px]"></div>
+            <div className="flex flex-col items-center justify-center min-h-screen bg-[#0f172a] text-white p-4 relative overflow-hidden">
+                {/* Background ambient lights */}
+                <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-600/20 blur-[120px] animate-pulse"></div>
+                <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-emerald-600/20 blur-[120px] animate-pulse" style={{ animationDelay: '1s' }}></div>
+                <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] rounded-full bg-purple-600/10 blur-[100px] animate-pulse" style={{ animationDelay: '2s' }}></div>
                 
-                <div className="bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 p-8 sm:p-12 rounded-[2rem] shadow-2xl max-w-md w-full text-center z-10">
-                    <h1 className="text-5xl sm:text-6xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 tracking-tighter">
+                {/* Floating decor */}
+                <div className="absolute top-20 left-20 text-4xl opacity-10 animate-bounce" style={{ animationDuration: '3s' }}>📄</div>
+                <div className="absolute bottom-32 left-1/4 text-4xl opacity-10 animate-bounce" style={{ animationDuration: '4s' }}>🔍</div>
+                <div className="absolute top-40 right-1/4 text-4xl opacity-10 animate-bounce" style={{ animationDuration: '5s' }}>⚡</div>
+                <div className="absolute bottom-20 right-20 text-4xl opacity-10 animate-bounce" style={{ animationDuration: '3.5s' }}>🏆</div>
+                
+                <div className="bg-slate-800/40 backdrop-blur-2xl border border-white/10 p-8 sm:p-12 rounded-[2.5rem] shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] max-w-md w-full text-center z-10 animate-[slideIn_0.5s_ease-out]">
+                    <div className="flex justify-center mb-4">
+                        <div className="w-20 h-20 bg-gradient-to-tr from-blue-500 to-emerald-400 rounded-2xl flex items-center justify-center text-4xl shadow-xl shadow-blue-500/30 transform rotate-3 hover:rotate-0 transition-transform cursor-pointer">
+                            W
+                        </div>
+                    </div>
+                    <h1 className="text-5xl sm:text-6xl font-black mb-3 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 tracking-tighter drop-shadow-sm">
                         WikiSprint
                     </h1>
-                    <p className="text-slate-400 mb-6">Hızlı oku, hızlı tıkla!</p>
+                    <p className="text-slate-400 mb-8 font-medium">Hedefe giden en kısa yolu bul!</p>
                     
                     {/* Game Type Selector */}
                     <div className="flex gap-2 mb-6">
@@ -332,9 +345,9 @@ export default function GamePage() {
                         <button 
                             onClick={startSinglePlayer}
                             disabled={loading}
-                            className="w-full py-4 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-all border border-slate-600 hover:border-slate-500"
+                            className="w-full py-4 bg-slate-700/50 hover:bg-slate-700 text-white font-bold rounded-xl transition-all border border-slate-600/50 hover:border-slate-400 hover:-translate-y-1 hover:shadow-lg active:translate-y-0 flex justify-center items-center gap-2"
                         >
-                            {loading ? 'Hazırlanıyor...' : '🎮 Tek Oyunculu Oyna'}
+                            {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : '🎮 Tek Oyunculu Oyna'}
                         </button>
                         
                         <div className="w-full h-px bg-slate-700 my-4 relative">
@@ -343,15 +356,15 @@ export default function GamePage() {
 
                         <input 
                             type="text" 
-                            placeholder="Adınız (Örn: Neo)"
+                            placeholder="Oyuncu Adın (Örn: Neo)"
                             value={playerName}
                             onChange={(e) => setPlayerName(e.target.value)}
-                            className="w-full bg-slate-900/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors mb-2 text-center"
+                            className="w-full bg-slate-900/50 border border-slate-600/50 rounded-xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all mb-2 text-center font-medium"
                         />
 
                         <button 
                             onClick={createRoom}
-                            className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/20"
+                            className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/25 hover:-translate-y-1 hover:shadow-blue-500/40 active:translate-y-0"
                         >
                             🚀 Yeni Oda Kur
                         </button>
@@ -359,17 +372,17 @@ export default function GamePage() {
                         <div className="flex gap-2">
                             <input 
                                 type="text" 
-                                placeholder="Oda Kodu"
+                                placeholder="Oda Kodu (Örn: ABCD)"
                                 value={joinRoomId}
-                                onChange={(e) => setJoinRoomId(e.target.value)}
-                                className="flex-1 bg-slate-900/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors text-center uppercase"
+                                onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
+                                className="flex-1 bg-slate-900/50 border border-slate-600/50 rounded-xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-center uppercase font-bold tracking-widest"
                                 maxLength={6}
                             />
                             <button 
                                 onClick={joinRoom}
-                                className="flex-1 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20"
+                                className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/25 hover:-translate-y-1 hover:shadow-emerald-500/40 active:translate-y-0 flex justify-center items-center gap-2"
                             >
-                                🤝 Odaya Katıl
+                                🤝 Katıl
                             </button>
                         </div>
                     </div>
@@ -385,12 +398,19 @@ export default function GamePage() {
         return (
             <>
             <ToastContainer toasts={toasts} />
-            <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-4">
-                <div className="bg-slate-800/80 backdrop-blur-md border border-slate-700 p-8 rounded-3xl shadow-2xl max-w-xl w-full text-center">
-                    <h2 className="text-3xl font-black mb-2">Oda Bekleme Salonu</h2>
-                    <div className="bg-slate-900/50 py-3 px-6 rounded-xl inline-block mb-8 border border-slate-700">
-                        <span className="text-slate-400 text-sm uppercase tracking-wider">Oda Kodu</span>
-                        <p className="text-4xl font-mono font-bold text-amber-400 tracking-widest">{roomId}</p>
+            <div className="flex flex-col items-center justify-center min-h-screen bg-[#0f172a] text-white p-4 relative overflow-hidden">
+                {/* Background ambient lights */}
+                <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-600/20 blur-[120px] animate-pulse"></div>
+                <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/20 blur-[120px] animate-pulse" style={{ animationDelay: '1s' }}></div>
+                
+                <div className="bg-slate-800/40 backdrop-blur-2xl border border-white/10 p-8 sm:p-10 rounded-[2.5rem] shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] max-w-xl w-full text-center z-10 animate-[slideIn_0.4s_ease-out]">
+                    <h2 className="text-3xl font-black mb-4 flex items-center justify-center gap-3">
+                        <span className="text-4xl">🛋️</span> Bekleme Salonu
+                    </h2>
+                    
+                    <div className="bg-slate-900/60 py-4 px-8 rounded-2xl inline-block mb-8 border border-white/5 shadow-inner">
+                        <span className="text-slate-400 text-xs font-bold uppercase tracking-wider block mb-1">Oda Kodu</span>
+                        <p className="text-5xl font-mono font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400 tracking-widest">{roomId}</p>
                     </div>
 
                     <div className="mb-8 text-left">
@@ -455,24 +475,27 @@ export default function GamePage() {
                                         onChange={setLobbyEndPage}
                                         className="bg-slate-900/50 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
                                     />
-                                    <button onClick={() => randomizeLobbyPage(setLobbyEndPage)} className="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-lg transition-colors" title="Rastgele">🎲</button>
+                                    <button onClick={() => randomizeLobbyPage(setLobbyEndPage)} className="px-3 py-2 bg-slate-700/80 hover:bg-slate-600 rounded-xl text-lg transition-transform hover:scale-110 active:scale-95 shadow-md border border-white/10" title="Rastgele">🎲</button>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {isHost ? (
+                    {!isHost && (
+                        <div className="py-6 bg-slate-900/40 border border-white/5 rounded-2xl shadow-inner mb-6 flex flex-col items-center justify-center gap-3 animate-pulse">
+                            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                            <p className="text-slate-300 font-medium">Kurucunun oyunu başlatması bekleniyor...</p>
+                        </div>
+                    )}
+
+                    {isHost && (
                         <button 
                             onClick={handleMultiplayerStart}
-                            disabled={loading}
-                            className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20 text-lg"
+                            disabled={loading || players.length < 2}
+                            className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black text-lg rounded-2xl transition-all shadow-xl shadow-emerald-500/25 hover:-translate-y-1 hover:shadow-emerald-500/40 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                         >
-                            {loading ? 'Oyun Hazırlanıyor...' : 'Yarışı Başlat!'}
+                            {loading ? 'Hazırlanıyor...' : (players.length < 2 ? '⏳ Oyuncu Bekleniyor...' : '🏁 Oyunu Başlat')}
                         </button>
-                    ) : (
-                        <div className="py-4 bg-slate-700/50 text-slate-300 font-bold rounded-xl border border-slate-600 animate-pulse">
-                            Kurucunun oyunu başlatması bekleniyor...
-                        </div>
                     )}
                 </div>
             </div>
