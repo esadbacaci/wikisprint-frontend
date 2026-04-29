@@ -366,13 +366,13 @@ export default function GamePage() {
                     <div className="flex gap-2 mb-6">
                         <button
                             onClick={() => setGameType('speed')}
-                            className={`flex-1 py-3 rounded-xl font-bold transition-all border ${gameType === 'speed' ? 'bg-amber-500/20 border-amber-500 text-amber-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}
+                            className={`flex-1 py-3.5 rounded-2xl font-bold transition-all border ${gameType === 'speed' ? 'bg-amber-500/20 border-amber-500 text-amber-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}
                         >
                             ⚡ Hız Modu
                         </button>
                         <button
                             onClick={() => setGameType('clicks')}
-                            className={`flex-1 py-3 rounded-xl font-bold transition-all border ${gameType === 'clicks' ? 'bg-blue-500/20 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}
+                            className={`flex-1 py-3.5 rounded-2xl font-bold transition-all border ${gameType === 'clicks' ? 'bg-blue-500/20 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}
                         >
                             🖱️ Tıklama Modu
                         </button>
@@ -385,7 +385,7 @@ export default function GamePage() {
                         <button 
                             onClick={startSinglePlayer}
                             disabled={loading}
-                            className="w-full py-4 bg-slate-700/50 hover:bg-slate-700 text-white font-bold rounded-xl transition-all border border-slate-600/50 hover:border-slate-400 hover:-translate-y-1 hover:shadow-lg active:translate-y-0 flex justify-center items-center gap-2"
+                            className="w-full py-4 bg-slate-700/50 hover:bg-slate-700 text-white font-bold rounded-2xl transition-all border border-slate-600/50 hover:border-slate-400 hover:-translate-y-1 hover:shadow-lg active:translate-y-0 flex justify-center items-center gap-2"
                         >
                             {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : '🎮 Tek Oyunculu Oyna'}
                         </button>
@@ -399,28 +399,28 @@ export default function GamePage() {
                             placeholder="Oyuncu Adın (Örn: Neo)"
                             value={playerName}
                             onChange={(e) => setPlayerName(e.target.value)}
-                            className="w-full bg-slate-900/50 border border-slate-600/50 rounded-xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all mb-2 text-center font-medium"
+                            className="w-full bg-slate-900/50 border border-slate-600/50 rounded-2xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all mb-2 text-center font-medium"
                         />
 
                         <button 
                             onClick={createRoom}
-                            className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/25 hover:-translate-y-1 hover:shadow-blue-500/40 active:translate-y-0"
+                            className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-500/25 hover:-translate-y-1 hover:shadow-blue-500/40 active:translate-y-0"
                         >
                             🚀 Yeni Oda Kur
                         </button>
                         
-                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 bg-slate-800/30 p-2 rounded-[1.75rem] border border-white/5 mt-2">
                             <input 
                                 type="text" 
                                 placeholder="Oda Kodu (Örn: ABCD)"
                                 value={joinRoomId}
                                 onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
-                                className="flex-1 bg-slate-900/50 border border-slate-600/50 rounded-xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-center uppercase font-bold tracking-widest w-full"
+                                className="flex-1 bg-slate-900/50 border border-slate-600/50 rounded-2xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-center uppercase font-bold tracking-widest w-full"
                                 maxLength={6}
                             />
                             <button 
                                 onClick={joinRoom}
-                                className="sm:flex-1 w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/25 hover:-translate-y-1 hover:shadow-emerald-500/40 active:translate-y-0 flex justify-center items-center gap-2"
+                                className="sm:flex-1 w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl transition-all shadow-lg shadow-emerald-500/25 hover:-translate-y-1 hover:shadow-emerald-500/40 active:translate-y-0 flex justify-center items-center gap-2"
                             >
                                 🤝 Katıl
                             </button>
@@ -488,13 +488,13 @@ export default function GamePage() {
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => setGameType('speed')}
-                                    className={`flex-1 py-3 rounded-xl font-bold transition-all border ${gameType === 'speed' ? 'bg-amber-500/20 border-amber-500 text-amber-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}
+                                    className={`flex-1 py-3.5 rounded-2xl font-bold transition-all border ${gameType === 'speed' ? 'bg-amber-500/20 border-amber-500 text-amber-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}
                                 >
                                     ⚡ Hız Modu
                                 </button>
                                 <button
                                     onClick={() => setGameType('clicks')}
-                                    className={`flex-1 py-3 rounded-xl font-bold transition-all border ${gameType === 'clicks' ? 'bg-blue-500/20 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}
+                                    className={`flex-1 py-3.5 rounded-2xl font-bold transition-all border ${gameType === 'clicks' ? 'bg-blue-500/20 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}
                                 >
                                     🖱️ Tıklama Modu
                                 </button>
@@ -515,18 +515,18 @@ export default function GamePage() {
                                         placeholder="Başlangıç makalesi (boş = rastgele)"
                                         value={lobbyStartPage}
                                         onChange={setLobbyStartPage}
-                                        className="bg-slate-900/50 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                                        className="bg-slate-900/50 border border-slate-600 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
                                     />
-                                    <button onClick={() => randomizeLobbyPage(setLobbyStartPage)} className="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-lg transition-colors" title="Rastgele">🎲</button>
+                                    <button onClick={() => randomizeLobbyPage(setLobbyStartPage)} className="px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-2xl text-lg transition-colors" title="Rastgele">🎲</button>
                                 </div>
                                 <div className="flex gap-2">
                                     <AutocompleteInput 
                                         placeholder="Hedef makale (boş = rastgele)"
                                         value={lobbyEndPage}
                                         onChange={setLobbyEndPage}
-                                        className="bg-slate-900/50 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                                        className="bg-slate-900/50 border border-slate-600 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
                                     />
-                                    <button onClick={() => randomizeLobbyPage(setLobbyEndPage)} className="px-3 py-2 bg-slate-700/80 hover:bg-slate-600 rounded-xl text-lg transition-transform hover:scale-110 active:scale-95 shadow-md border border-white/10" title="Rastgele">🎲</button>
+                                    <button onClick={() => randomizeLobbyPage(setLobbyEndPage)} className="px-4 py-3 bg-slate-700/80 hover:bg-slate-600 rounded-2xl text-lg transition-transform hover:scale-110 active:scale-95 shadow-md border border-white/10" title="Rastgele">🎲</button>
                                 </div>
                             </div>
                         </div>
