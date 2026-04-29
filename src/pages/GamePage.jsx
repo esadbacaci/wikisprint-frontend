@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import { getPageContent, getRandomArticle } from '../services/wikiService';
 import { socket } from '../services/socket';
 import ToastContainer, { useToast } from '../components/Toast';
+import AutocompleteInput from '../components/AutocompleteInput';
 
 export default function GamePage() {
     const { toasts, addToast } = useToast();
@@ -439,18 +440,20 @@ export default function GamePage() {
                             <h3 className="text-slate-400 uppercase tracking-wider text-xs font-bold mb-3 px-2">Makale Seçimi</h3>
                             <div className="flex flex-col gap-3">
                                 <div className="flex gap-2">
-                                    <input 
-                                        type="text" placeholder="Başlangıç makalesi (boş = rastgele)"
-                                        value={lobbyStartPage} onChange={e => setLobbyStartPage(e.target.value)}
-                                        className="flex-1 bg-slate-900/50 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                                    <AutocompleteInput 
+                                        placeholder="Başlangıç makalesi (boş = rastgele)"
+                                        value={lobbyStartPage}
+                                        onChange={setLobbyStartPage}
+                                        className="bg-slate-900/50 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
                                     />
                                     <button onClick={() => randomizeLobbyPage(setLobbyStartPage)} className="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-lg transition-colors" title="Rastgele">🎲</button>
                                 </div>
                                 <div className="flex gap-2">
-                                    <input 
-                                        type="text" placeholder="Hedef makalesi (boş = rastgele)"
-                                        value={lobbyEndPage} onChange={e => setLobbyEndPage(e.target.value)}
-                                        className="flex-1 bg-slate-900/50 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 transition-colors"
+                                    <AutocompleteInput 
+                                        placeholder="Hedef makale (boş = rastgele)"
+                                        value={lobbyEndPage}
+                                        onChange={setLobbyEndPage}
+                                        className="bg-slate-900/50 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
                                     />
                                     <button onClick={() => randomizeLobbyPage(setLobbyEndPage)} className="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-lg transition-colors" title="Rastgele">🎲</button>
                                 </div>

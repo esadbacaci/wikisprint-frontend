@@ -29,3 +29,17 @@ export const getRandomArticle = async () => {
         throw error;
     }
 };
+
+export const searchWikipediaArticles = async (query) => {
+    try {
+        if (!query || query.trim().length < 2) return [];
+        const url = `https://tr.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=5&namespace=0&format=json&origin=*`;
+        const response = await fetch(url);
+        const data = await response.json();
+        // data format is: [search_term, [titles], [descriptions], [links]]
+        return data[1] || [];
+    } catch (error) {
+        console.error("Error in searchWikipediaArticles:", error);
+        return [];
+    }
+};
