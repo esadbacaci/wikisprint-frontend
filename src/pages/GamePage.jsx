@@ -1,0 +1,532 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { getPageContent, getRandomArticle } from '../services/wikiService';
+import { socket } from '../services/socket';
+
+export default function GamePage() {
+    const [gameState, setGameState] = useState('menu'); // 'menu', 'lobby', 'playing', 'finished'
+    const [gameMode, setGameMode] = useState('single'); // 'single', 'multi'
+    
+    // Core Game States
+    const [startPage, setStartPage] = useState(null);
+    const [endPage, setEndPage] = useState(null);
+    const [currentPage, setCurrentPage] = useState(null);
+    const [pageHtml, setPageHtml] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [clicks, setClicks] = useState(0);
+    const [timeElapsed, setTimeElapsed] = useState(0);
+    
+    // Multiplayer States
+    const [playerName, setPlayerName] = useState('');
+    const [roomId, setRoomId] = useState('');
+    const [joinRoomId, setJoinRoomId] = useState('');
+    const [players, setPlayers] = useState([]);
+    const [hostId, setHostId] = useState('');
+    const [winner, setWinner] = useState(null);
+    const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(true);
+
+    const contentRef = useRef(null);
+
+    // --- SOCKET LISTENERS ---
+    useEffect(() => {
+        socket.on('room-created', ({ roomId, players, hostId }) => {
+            setRoomId(roomId);
+            setPlayers(players);
+            setHostId(hostId);
+            setGameState('lobby');
+        });
+
+        socket.on('room-joined', ({ roomId, players, hostId }) => {
+            setRoomId(roomId);
+            setPlayers(players);
+            setHostId(hostId);
+            setGameState('lobby');
+        });
+
+        socket.on('room-updated', ({ players, hostId }) => {
+            setPlayers(players);
+            setHostId(hostId);
+        });
+
+        socket.on('game-started', async ({ startPage, targetPage, players }) => {
+            setStartPage(startPage);
+            setEndPage(targetPage);
+            setCurrentPage(startPage);
+            setPlayers(players);
+            setClicks(0);
+            setTimeElapsed(0);
+            setWinner(null);
+            
+            try {
+                setLoading(true);
+                const content = await getPageContent(startPage);
+                setPageHtml(content.text);
+                setGameState('playing');
+            } catch (error) {
+                console.error("Error loading start page:", error);
+                alert("Başlangıç sayfası yüklenemedi!");
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        socket.on('progress-updated', ({ players }) => {
+            setPlayers(players);
+        });
+
+        socket.on('game-finished', ({ winner, players }) => {
+            setWinner(winner);
+            setPlayers(players);
+            setGameState('finished');
+        });
+
+        socket.on('error', ({ message }) => {
+            alert(message);
+        });
+
+        return () => {
+            socket.off('room-created');
+            socket.off('room-joined');
+            socket.off('room-updated');
+            socket.off('game-started');
+            socket.off('progress-updated');
+            socket.off('game-finished');
+            socket.off('error');
+        };
+    }, []);
+
+    // --- TIMER ---
+    useEffect(() => {
+        let timer;
+        if (gameState === 'playing' && !winner) {
+            timer = setInterval(() => {
+                setTimeElapsed((prev) => prev + 1);
+            }, 1000);
+        }
+        return () => clearInterval(timer);
+    }, [gameState, winner]);
+
+    // --- ACTION HANDLERS ---
+    
+    // Single Player Init
+    const startSinglePlayer = async () => {
+        setGameMode('single');
+        setLoading(true);
+        try {
+            let start = await getRandomArticle();
+            let end = await getRandomArticle();
+            while (start === end) end = await getRandomArticle();
+            
+            setStartPage(start);
+            setEndPage(end);
+            setCurrentPage(start);
+            setClicks(0);
+            setTimeElapsed(0);
+            
+            const content = await getPageContent(start);
+            setPageHtml(content.text);
+            
+            setGameState('playing');
+        } catch (error) {
+            console.error(error);
+            alert("Rastgele makaleler getirilemedi.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Multiplayer Create Room
+    const createRoom = () => {
+        if (!playerName.trim()) return alert("Lütfen bir isim girin");
+        setGameMode('multi');
+        socket.connect();
+        socket.emit('create-room', { playerName });
+    };
+
+    // Multiplayer Join Room
+    const joinRoom = () => {
+        if (!playerName.trim()) return alert("Lütfen bir isim girin");
+        if (!joinRoomId.trim()) return alert("Lütfen bir oda kodu girin");
+        setGameMode('multi');
+        socket.connect();
+        socket.emit('join-room', { roomId: joinRoomId.toUpperCase(), playerName });
+    };
+
+    // Multiplayer Start Game (Host only)
+    const handleMultiplayerStart = async () => {
+        setLoading(true);
+        try {
+            let start = await getRandomArticle();
+            let end = await getRandomArticle();
+            while (start === end) end = await getRandomArticle();
+            
+            socket.emit('start-game', { roomId, startPage: start, targetPage: end });
+        } catch (error) {
+            console.error(error);
+            alert("Rastgele makaleler getirilemedi.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // --- LINK CLICK HANDLER ---
+    useEffect(() => {
+        if (!contentRef.current || gameState !== 'playing') return;
+
+        const handleLinkClick = async (e) => {
+            const target = e.target.closest('a');
+            if (!target) return;
+
+            const href = target.getAttribute('href');
+            
+            if (href && href.startsWith('/wiki/') && !href.includes(':')) {
+                e.preventDefault();
+                const rawTarget = decodeURIComponent(href.replace('/wiki/', ''));
+                const targetTitle = rawTarget.replace(/_/g, ' ');
+                
+                try {
+                    setLoading(true);
+                    
+                    const newClicks = clicks + 1;
+                    setClicks(newClicks);
+                    setCurrentPage(targetTitle);
+                    
+                    // Emit progress in multiplayer
+                    if (gameMode === 'multi') {
+                        socket.emit('update-progress', { roomId, currentPage: targetTitle, clicks: newClicks });
+                    }
+                    
+                    const content = await getPageContent(targetTitle);
+                    setPageHtml(content.text);
+                    
+                    // Check Win Condition
+                    if (targetTitle.toLowerCase() === endPage?.toLowerCase()) {
+                        if (gameMode === 'single') {
+                            setGameState('finished');
+                        } else {
+                            socket.emit('finish-game', { roomId, timeElapsed });
+                        }
+                    }
+                } catch (error) {
+                    console.error("Failed to load new page:", error);
+                    alert("Sayfa yüklenirken bir hata oluştu.");
+                } finally {
+                    setLoading(false);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            } else if (href && href.startsWith('#')) {
+                // Allow anchor
+            } else {
+                e.preventDefault();
+            }
+        };
+
+        const container = contentRef.current;
+        container.addEventListener('click', handleLinkClick);
+        return () => container.removeEventListener('click', handleLinkClick);
+    }, [pageHtml, endPage, gameState, clicks, gameMode, roomId, timeElapsed]);
+
+    // --- HELPERS ---
+    const formatTime = (seconds) => {
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+    };
+
+    // ==========================================
+    // RENDER SCREENS
+    // ==========================================
+
+    if (gameState === 'menu') {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-4 relative overflow-hidden">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px]"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-600/10 blur-[120px]"></div>
+                
+                <div className="bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 p-8 sm:p-12 rounded-[2rem] shadow-2xl max-w-md w-full text-center z-10">
+                    <h1 className="text-5xl sm:text-6xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 tracking-tighter">
+                        WikiSprint
+                    </h1>
+                    <p className="text-slate-400 mb-8">Hızlı oku, hızlı tıkla!</p>
+                    
+                    <div className="flex flex-col gap-4">
+                        <button 
+                            onClick={startSinglePlayer}
+                            disabled={loading}
+                            className="w-full py-4 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-all border border-slate-600 hover:border-slate-500"
+                        >
+                            {loading ? 'Hazırlanıyor...' : '🎮 Tek Oyunculu Oyna'}
+                        </button>
+                        
+                        <div className="w-full h-px bg-slate-700 my-4 relative">
+                            <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-slate-800 px-4 text-xs text-slate-500 uppercase font-bold">Veya Multiplayer</span>
+                        </div>
+
+                        <input 
+                            type="text" 
+                            placeholder="Adınız (Örn: Neo)"
+                            value={playerName}
+                            onChange={(e) => setPlayerName(e.target.value)}
+                            className="w-full bg-slate-900/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors mb-2 text-center"
+                        />
+
+                        <button 
+                            onClick={createRoom}
+                            className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/20"
+                        >
+                            🚀 Yeni Oda Kur
+                        </button>
+                        
+                        <div className="flex gap-2">
+                            <input 
+                                type="text" 
+                                placeholder="Oda Kodu"
+                                value={joinRoomId}
+                                onChange={(e) => setJoinRoomId(e.target.value)}
+                                className="flex-1 bg-slate-900/50 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors text-center uppercase"
+                                maxLength={6}
+                            />
+                            <button 
+                                onClick={joinRoom}
+                                className="flex-1 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20"
+                            >
+                                🤝 Odaya Katıl
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (gameState === 'lobby') {
+        const isHost = hostId === socket.id;
+        
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-4">
+                <div className="bg-slate-800/80 backdrop-blur-md border border-slate-700 p-8 rounded-3xl shadow-2xl max-w-xl w-full text-center">
+                    <h2 className="text-3xl font-black mb-2">Oda Bekleme Salonu</h2>
+                    <div className="bg-slate-900/50 py-3 px-6 rounded-xl inline-block mb-8 border border-slate-700">
+                        <span className="text-slate-400 text-sm uppercase tracking-wider">Oda Kodu</span>
+                        <p className="text-4xl font-mono font-bold text-amber-400 tracking-widest">{roomId}</p>
+                    </div>
+
+                    <div className="mb-8 text-left">
+                        <h3 className="text-slate-400 uppercase tracking-wider text-xs font-bold mb-3 px-2">Oyuncular ({players.length})</h3>
+                        <div className="bg-slate-900/30 rounded-2xl p-2 border border-slate-700/50 flex flex-col gap-2 max-h-60 overflow-y-auto">
+                            {players.map(p => (
+                                <div key={p.id} className="flex items-center justify-between bg-slate-800 p-3 rounded-xl border border-slate-700">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center font-bold">
+                                            {p.name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <span className="font-medium">{p.name} {p.id === socket.id ? '(Sen)' : ''}</span>
+                                    </div>
+                                    {p.id === hostId && <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-1 rounded-lg border border-amber-500/30">Kurucu</span>}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {isHost ? (
+                        <button 
+                            onClick={handleMultiplayerStart}
+                            disabled={loading}
+                            className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20 text-lg"
+                        >
+                            {loading ? 'Oyun Hazırlanıyor...' : 'Yarışı Başlat!'}
+                        </button>
+                    ) : (
+                        <div className="py-4 bg-slate-700/50 text-slate-300 font-bold rounded-xl border border-slate-600 animate-pulse">
+                            Kurucunun oyunu başlatması bekleniyor...
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    if (gameState === 'playing') {
+        return (
+            <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center pb-20 w-full relative">
+                
+                {/* HUD / Header */}
+                <div className="sticky top-0 z-50 w-full bg-slate-900/90 backdrop-blur-xl border-b border-slate-700/50 shadow-2xl transition-all">
+                    <div className="w-full px-4 sm:px-8 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
+                        
+                        <div className="flex flex-col gap-1 w-full md:w-auto">
+                            <span className="text-slate-400 font-semibold uppercase tracking-wider text-[10px] sm:text-xs">Görev Rotası</span>
+                            <div className="flex items-center gap-2 sm:gap-3 bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700/50 shadow-inner overflow-hidden">
+                                <div className="flex flex-col min-w-0 flex-1">
+                                    <span className="text-[10px] text-slate-500 uppercase font-bold">Başlangıç</span>
+                                    <span className="text-blue-400 font-medium break-words leading-tight">{startPage}</span>
+                                </div>
+                                <div className="w-8 h-8 flex-shrink-0 rounded-full bg-slate-700 flex items-center justify-center text-slate-400 shadow-sm">→</div>
+                                <div className="flex flex-col min-w-0 flex-1">
+                                    <span className="text-[10px] text-slate-500 uppercase font-bold">Hedef</span>
+                                    <span className="text-emerald-400 font-medium break-words leading-tight">{endPage}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-center gap-4 sm:gap-8 bg-slate-800/50 px-6 py-2 rounded-2xl border border-slate-700/30 w-full md:w-auto">
+                            <div className="flex flex-col items-center">
+                                <span className="text-slate-400 text-[10px] sm:text-xs uppercase font-bold tracking-wider">Tıklama</span>
+                                <span className="text-2xl sm:text-3xl font-black bg-clip-text text-transparent bg-gradient-to-br from-blue-400 to-indigo-400">{clicks}</span>
+                            </div>
+                            <div className="w-px h-10 bg-slate-700/50"></div>
+                            <div className="flex flex-col items-center">
+                                <span className="text-slate-400 text-[10px] sm:text-xs uppercase font-bold tracking-wider">Süre</span>
+                                <span className="text-2xl sm:text-3xl font-black font-mono bg-clip-text text-transparent bg-gradient-to-br from-amber-400 to-orange-400">{formatTime(timeElapsed)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="w-full flex flex-col xl:flex-row gap-6 px-2 sm:px-6 md:px-8 mt-6">
+                    
+                    {/* Content Area */}
+                    <main className="flex-1 relative order-2 xl:order-1">
+                        {loading && (
+                            <div className="absolute inset-0 z-10 flex justify-center pt-32 bg-slate-900/40 backdrop-blur-[2px] rounded-3xl transition-all duration-300">
+                                <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-blue-500/20"></div>
+                            </div>
+                        )}
+                        
+                        <div className="wiki-wrapper w-full">
+                            <h1 className="text-3xl sm:text-5xl font-serif font-bold text-black mb-6 border-b border-gray-300 pb-2 leading-tight break-words">
+                                {currentPage}
+                            </h1>
+                            <div ref={contentRef} className="wiki-content" dangerouslySetInnerHTML={{ __html: pageHtml }} />
+                        </div>
+                    </main>
+
+                    {/* Multiplayer Leaderboard Sidebar */}
+                    {gameMode === 'multi' && (
+                        <aside className={`flex-shrink-0 order-1 xl:order-2 transition-all duration-300 ${isLeaderboardOpen ? 'w-full xl:w-80' : 'w-full xl:w-16'}`}>
+                            <div className="sticky top-28 bg-slate-800/80 backdrop-blur-md border border-slate-700/50 rounded-3xl p-4 shadow-2xl overflow-hidden flex flex-col">
+                                <div className="flex items-center justify-between mb-4">
+                                    {isLeaderboardOpen && (
+                                        <h3 className="text-lg font-black text-white flex items-center gap-2">
+                                            <span className="relative flex h-3 w-3">
+                                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                                            </span>
+                                            Skor Tablosu
+                                        </h3>
+                                    )}
+                                    <button 
+                                        onClick={() => setIsLeaderboardOpen(!isLeaderboardOpen)}
+                                        className="p-2 bg-slate-700 hover:bg-slate-600 rounded-full transition-colors mx-auto xl:mx-0"
+                                        title={isLeaderboardOpen ? "Tabloyu Küçült" : "Tabloyu Büyüt"}
+                                    >
+                                        {isLeaderboardOpen ? (
+                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                                        ) : (
+                                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+                                        )}
+                                    </button>
+                                </div>
+                                
+                                {isLeaderboardOpen ? (
+                                    <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                                        {players.sort((a,b) => b.clicks - a.clicks).map((p, index) => (
+                                            <div key={p.id} className={`p-4 rounded-2xl border ${p.id === socket.id ? 'bg-blue-600/20 border-blue-500/50' : 'bg-slate-900/50 border-slate-700/50'} transition-all`}>
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <span className="font-bold text-sm pr-2 break-all" title={p.name}>
+                                                        {index + 1}. {p.name} {p.id === socket.id && '(Sen)'}
+                                                    </span>
+                                                    <span className="text-xs bg-slate-800 px-2 py-1 rounded text-slate-300 font-mono flex-shrink-0">
+                                                        {p.clicks} tık
+                                                    </span>
+                                                </div>
+                                                <div className="text-xs text-slate-400 break-words line-clamp-2">
+                                                    📍 {p.currentPage || startPage}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto hidden xl:flex items-center">
+                                        {players.sort((a,b) => b.clicks - a.clicks).map((p, index) => (
+                                            <div key={p.id} title={`${p.name} - ${p.clicks} tık`} className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border ${p.id === socket.id ? 'bg-blue-600 text-white border-blue-400' : 'bg-slate-700 text-slate-300 border-slate-600'}`}>
+                                                {p.name.charAt(0).toUpperCase()}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </aside>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    if (gameState === 'finished') {
+        const isMulti = gameMode === 'multi';
+        const winPlayer = isMulti ? winner : { name: 'Sen', clicks, timeElapsed };
+        
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-4">
+                <div className="bg-slate-800 border-2 border-amber-500/30 p-8 sm:p-12 rounded-3xl shadow-[0_0_50px_-12px_rgba(245,158,11,0.3)] max-w-xl w-full text-center">
+                    <div className="w-24 h-24 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 text-5xl shadow-lg shadow-amber-500/30">
+                        🏆
+                    </div>
+                    <h2 className="text-4xl font-black text-white mb-2">Oyun Bitti!</h2>
+                    <p className="text-slate-300 mb-8 text-lg">
+                        <span className="text-amber-400 font-bold">{winPlayer?.name}</span>, hedefe ilk ulaşan oldu!
+                    </p>
+                    
+                    {isMulti && (
+                        <div className="bg-slate-900/50 rounded-2xl border border-slate-700 p-4 mb-8 text-left">
+                            <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-3">Sıralama</h3>
+                            <div className="flex flex-col gap-2">
+                                {players.map((p, i) => (
+                                    <div key={p.id} className={`flex justify-between items-center p-3 rounded-xl border ${p.isFinished ? 'bg-emerald-900/20 border-emerald-500/30' : 'bg-slate-800 border-slate-700'}`}>
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-bold w-4">{i+1}.</span>
+                                            <span className="font-medium truncate max-w-[100px] sm:max-w-[150px]">{p.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-4 text-sm font-mono text-slate-300">
+                                            <span>{p.clicks} tık</span>
+                                            <span className={p.isFinished ? 'text-amber-400' : 'text-slate-500'}>
+                                                {p.isFinished ? formatTime(p.timeElapsed) : 'Bitiremedi'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {!isMulti && (
+                        <div className="grid grid-cols-2 gap-4 mb-10">
+                            <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-700">
+                                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Geçen Süre</p>
+                                <p className="text-3xl font-black text-amber-400 font-mono">{formatTime(timeElapsed)}</p>
+                            </div>
+                            <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-700">
+                                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Toplam Tıklama</p>
+                                <p className="text-3xl font-black text-blue-400">{clicks}</p>
+                            </div>
+                        </div>
+                    )}
+                    
+                    <button 
+                        onClick={() => {
+                            if (isMulti) {
+                                socket.disconnect();
+                            }
+                            window.location.reload();
+                        }}
+                        className="w-full py-4 px-6 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-black text-lg rounded-2xl transition-all shadow-xl shadow-amber-500/20 active:scale-95"
+                    >
+                        Ana Menüye Dön
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return null;
+}
