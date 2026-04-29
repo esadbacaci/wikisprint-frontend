@@ -21,6 +21,7 @@ export default function GamePage() {
     const [timeElapsed, setTimeElapsed] = useState(0);
     const [sections, setSections] = useState([]);
     const [isTocOpen, setIsTocOpen] = useState(true);
+    const [pageHistory, setPageHistory] = useState([]);
     
     // Multiplayer States
     const [playerName, setPlayerName] = useState('');
@@ -68,6 +69,7 @@ export default function GamePage() {
             setClicks(0);
             setTimeElapsed(0);
             setWinner(null);
+            setPageHistory([]);
             
             try {
                 setLoading(true);
@@ -165,6 +167,7 @@ export default function GamePage() {
             setCurrentPage(start);
             setClicks(0);
             setTimeElapsed(0);
+            setPageHistory([]);
             
             const content = await getPageContent(start);
             setPageHtml(content.text);
@@ -173,7 +176,7 @@ export default function GamePage() {
             setGameState('playing');
         } catch (error) {
             console.error(error);
-            alert("Rastgele makaleler getirilemedi.");
+            addToast("Rastgele makaleler getirilemedi.", 'error');
         } finally {
             setLoading(false);
         }
@@ -181,7 +184,7 @@ export default function GamePage() {
 
     // Multiplayer Create Room
     const createRoom = () => {
-        if (!playerName.trim()) return alert("Lütfen bir isim girin");
+        if (!playerName.trim()) return addToast("Lütfen bir isim girin", 'warning');
         setGameMode('multi');
         socket.connect();
         socket.emit('create-room', { playerName });
@@ -207,7 +210,7 @@ export default function GamePage() {
             socket.emit('start-game', { roomId, startPage: start, targetPage: end, gameMode: gameType });
         } catch (error) {
             console.error(error);
-            alert("Rastgele makaleler getirilemedi.");
+            addToast("Rastgele makaleler getirilemedi.", 'error');
         } finally {
             setLoading(false);
         }
@@ -255,6 +258,8 @@ export default function GamePage() {
                 try {
                     setLoading(true);
                     
+                    setPageHistory(prev => [...prev, currentPage]);
+
                     const newClicks = clicks + 1;
                     setClicks(newClicks);
                     setCurrentPage(targetTitle);
@@ -292,7 +297,32 @@ export default function GamePage() {
         const container = contentRef.current;
         container.addEventListener('click', handleLinkClick);
         return () => container.removeEventListener('click', handleLinkClick);
-    }, [pageHtml, endPage, gameState, clicks, gameMode, roomId, timeElapsed]);
+    }, [pageHtml, endPage, gameState, clicks, gameMode, roomId, timeElapsed, currentPage]);
+
+    const goBack = async () => {
+        if (pageHistory.length === 0 || loading) return;
+        const previousPage = pageHistory[pageHistory.length - 1];
+        try {
+            setLoading(true);
+            const newClicks = clicks + 1;
+            setClicks(newClicks);
+            setCurrentPage(previousPage);
+            setPageHistory(prev => prev.slice(0, -1));
+
+            if (gameMode === 'multi') {
+                socket.emit('update-progress', { roomId, currentPage: previousPage, clicks: newClicks });
+            }
+
+            const content = await getPageContent(previousPage);
+            setPageHtml(content.text);
+            setSections(content.sections || []);
+        } catch (error) {
+            addToast('Önceki sayfaya dönülemedi.', 'error');
+        } finally {
+            setLoading(false);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
 
     // --- HELPERS ---
     const formatTime = (seconds) => {
@@ -550,6 +580,16 @@ export default function GamePage() {
                         </div>
                         
                         <div className="flex flex-row items-center justify-between w-full md:w-auto gap-2">
+                            <button 
+                                onClick={goBack} 
+                                disabled={pageHistory.length === 0 || loading}
+                                className={`flex flex-col items-center justify-center gap-1 bg-slate-800/50 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border border-slate-700/30 transition-all flex-shrink-0 ${pageHistory.length > 0 && !loading ? 'hover:bg-slate-700 cursor-pointer active:scale-95' : 'opacity-50 cursor-not-allowed'}`}
+                                title="Önceki Sayfaya Dön (+1 Tık)"
+                            >
+                                <span className="text-xl sm:text-2xl leading-none">↩️</span>
+                                <span className="text-[8px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-wider">Geri</span>
+                            </button>
+
                             <div className="flex items-center justify-center gap-4 sm:gap-8 bg-slate-800/50 px-4 sm:px-6 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border border-slate-700/30 flex-1 md:flex-none">
                                 <div className="flex flex-col items-center">
                                     <span className="text-slate-400 text-[9px] sm:text-[10px] uppercase font-bold tracking-wider leading-none mb-0.5">Tıklama</span>
@@ -586,18 +626,39 @@ export default function GamePage() {
                 <div className="w-full flex flex-col xl:flex-row gap-3 sm:gap-4 px-2 sm:px-6 md:px-8 mt-3 sm:mt-6">
 
                     {/* Content Area */}
-                    <main className="flex-1 relative order-1 xl:order-1 min-w-0">
+                    <main className="flex-1 relative order-1 min-w-0">
                         {loading && (
                             <div className="absolute inset-0 z-10 flex justify-center pt-32 bg-slate-900/40 backdrop-blur-[2px] rounded-lg transition-all duration-300">
                                 <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-blue-500/20"></div>
                             </div>
                         )}
                         
-                        <div className="wiki-wrapper w-full">
-                            <h1 className="text-2xl sm:text-4xl font-serif font-bold text-black mb-3 sm:mb-4 border-b border-gray-300 pb-2 leading-tight break-words">
-                                {currentPage}
-                            </h1>
-                            <div ref={contentRef} className="wiki-content" dangerouslySetInnerHTML={{ __html: pageHtml }} />
+                        <div className="wiki-wrapper w-full flex flex-col md:flex-row gap-6 items-start">
+                            {/* Inner TOC (Left side of white wrapper) */}
+                            {sections && sections.length > 0 && (
+                                <div className="w-full md:w-56 lg:w-64 flex-shrink-0 sticky top-28 bg-[#f8f9fa] border border-[#a2a9b1] p-4 text-[95%]">
+                                    <h2 className="font-sans font-bold text-black mb-2 pb-2 border-b border-[#a2a9b1]">İçindekiler</h2>
+                                    <ul className="flex flex-col gap-1.5 overflow-y-auto max-h-[calc(100vh-200px)] custom-scrollbar pr-2">
+                                        {sections.map((sec, idx) => (
+                                            <li key={idx} style={{ marginLeft: `${(sec.toclevel - 1) * 12}px` }}>
+                                                <a 
+                                                    href={`#${sec.anchor}`} 
+                                                    className="text-[#0645ad] hover:underline" 
+                                                    dangerouslySetInnerHTML={{ __html: `${sec.number}. ${sec.line}` }} 
+                                                />
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Main Text Content */}
+                            <div className="flex-1 min-w-0">
+                                <h1 className="text-2xl sm:text-4xl font-serif font-bold text-black mb-3 sm:mb-4 border-b border-gray-300 pb-2 leading-tight break-words">
+                                    {currentPage}
+                                </h1>
+                                <div ref={contentRef} className="wiki-content" dangerouslySetInnerHTML={{ __html: pageHtml }} />
+                            </div>
                         </div>
                     </main>
 
