@@ -188,6 +188,9 @@ export default function GamePage() {
     // Multiplayer Create Room
     const createRoom = () => {
         if (!playerName.trim()) return addToast("Lütfen bir isim girin", 'warning');
+        if (playerName.trim().toLowerCase() === 'berra') {
+            return addToast("Bu isim dünyanın en güzel insanına ait o yüzden alamazsınız ❤️🥰", 'error');
+        }
         setGameMode('multi');
         socket.connect();
         socket.emit('create-room', { playerName });
@@ -196,6 +199,9 @@ export default function GamePage() {
     // Multiplayer Join Room
     const joinRoom = () => {
         if (!playerName.trim()) return addToast('Lütfen bir isim girin', 'warning');
+        if (playerName.trim().toLowerCase() === 'berra') {
+            return addToast("Bu isim dünyanın en güzel insanına ait o yüzden alamazsınız ❤️🥰", 'error');
+        }
         if (!joinRoomId.trim()) return addToast('Lütfen bir oda kodu girin', 'warning');
         setGameMode('multi');
         socket.connect();
