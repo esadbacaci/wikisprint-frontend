@@ -379,18 +379,18 @@ export default function GamePage() {
                             🚀 Yeni Oda Kur
                         </button>
                         
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                             <input 
                                 type="text" 
                                 placeholder="Oda Kodu (Örn: ABCD)"
                                 value={joinRoomId}
                                 onChange={(e) => setJoinRoomId(e.target.value.toUpperCase())}
-                                className="flex-1 bg-slate-900/50 border border-slate-600/50 rounded-xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-center uppercase font-bold tracking-widest"
+                                className="flex-1 bg-slate-900/50 border border-slate-600/50 rounded-xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-center uppercase font-bold tracking-widest w-full"
                                 maxLength={6}
                             />
                             <button 
                                 onClick={joinRoom}
-                                className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/25 hover:-translate-y-1 hover:shadow-emerald-500/40 active:translate-y-0 flex justify-center items-center gap-2"
+                                className="sm:flex-1 w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/25 hover:-translate-y-1 hover:shadow-emerald-500/40 active:translate-y-0 flex justify-center items-center gap-2"
                             >
                                 🤝 Katıl
                             </button>
