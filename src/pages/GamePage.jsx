@@ -510,44 +510,46 @@ export default function GamePage() {
             <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center pb-20 w-full relative">
                 
                 {/* HUD / Header */}
-                <div className="sticky top-0 z-50 w-full bg-slate-900/90 backdrop-blur-xl border-b border-slate-700/50 shadow-2xl transition-all">
-                    <div className="w-full px-4 sm:px-8 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="sticky top-0 z-50 w-full bg-slate-900/95 backdrop-blur-xl border-b border-slate-700/50 shadow-2xl transition-all">
+                    <div className="w-full px-3 sm:px-8 py-2 sm:py-3 flex flex-col md:flex-row justify-between items-center gap-3 md:gap-4">
                         
                         <div className="flex flex-col gap-1 w-full md:w-auto">
-                            <span className="text-slate-400 font-semibold uppercase tracking-wider text-[10px] sm:text-xs">Görev Rotası</span>
-                            <div className="flex items-center gap-2 sm:gap-3 bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700/50 shadow-inner overflow-hidden">
+                            <span className="hidden sm:block text-slate-400 font-semibold uppercase tracking-wider text-[10px] sm:text-xs">Görev Rotası</span>
+                            <div className="flex items-center gap-2 sm:gap-3 bg-slate-800/80 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-slate-700/50 shadow-inner overflow-hidden">
                                 <div className="flex flex-col min-w-0 flex-1">
-                                    <span className="text-[10px] text-slate-500 uppercase font-bold">Başlangıç</span>
-                                    <span className="text-blue-400 font-medium break-words leading-tight">{startPage}</span>
+                                    <span className="text-[9px] sm:text-[10px] text-slate-500 uppercase font-bold leading-none mb-0.5">Başlangıç</span>
+                                    <span className="text-blue-400 font-medium break-words leading-tight text-sm sm:text-base">{startPage}</span>
                                 </div>
-                                <div className="w-8 h-8 flex-shrink-0 rounded-full bg-slate-700 flex items-center justify-center text-slate-400 shadow-sm">→</div>
-                                <div className="flex flex-col min-w-0 flex-1">
-                                    <span className="text-[10px] text-slate-500 uppercase font-bold">Hedef</span>
-                                    <span className="text-emerald-400 font-medium break-words leading-tight">{endPage}</span>
+                                <div className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0 rounded-full bg-slate-700 flex items-center justify-center text-slate-400 shadow-sm text-xs sm:text-base">→</div>
+                                <div className="flex flex-col min-w-0 flex-1 text-right sm:text-left">
+                                    <span className="text-[9px] sm:text-[10px] text-slate-500 uppercase font-bold leading-none mb-0.5">Hedef</span>
+                                    <span className="text-emerald-400 font-medium break-words leading-tight text-sm sm:text-base">{endPage}</span>
                                 </div>
                             </div>
                         </div>
                         
-                        <div className="flex items-center justify-center gap-4 sm:gap-8 bg-slate-800/50 px-6 py-2 rounded-2xl border border-slate-700/30 w-full md:w-auto">
-                            <div className="flex flex-col items-center">
-                                <span className="text-slate-400 text-[10px] sm:text-xs uppercase font-bold tracking-wider">Tıklama</span>
-                                <span className="text-2xl sm:text-3xl font-black bg-clip-text text-transparent bg-gradient-to-br from-blue-400 to-indigo-400">{clicks}</span>
+                        <div className="flex flex-row items-center justify-between w-full md:w-auto gap-2">
+                            <div className="flex items-center justify-center gap-4 sm:gap-8 bg-slate-800/50 px-4 sm:px-6 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border border-slate-700/30 flex-1 md:flex-none">
+                                <div className="flex flex-col items-center">
+                                    <span className="text-slate-400 text-[9px] sm:text-[10px] uppercase font-bold tracking-wider leading-none mb-0.5">Tıklama</span>
+                                    <span className="text-xl sm:text-3xl font-black bg-clip-text text-transparent bg-gradient-to-br from-blue-400 to-indigo-400 leading-none">{clicks}</span>
+                                </div>
+                                <div className="w-px h-8 sm:h-10 bg-slate-700/50"></div>
+                                <div className="flex flex-col items-center">
+                                    <span className="text-slate-400 text-[9px] sm:text-[10px] uppercase font-bold tracking-wider leading-none mb-0.5">Süre</span>
+                                    <span className="text-xl sm:text-3xl font-black font-mono bg-clip-text text-transparent bg-gradient-to-br from-amber-400 to-orange-400 leading-none">{formatTime(timeElapsed)}</span>
+                                </div>
                             </div>
-                            <div className="w-px h-10 bg-slate-700/50"></div>
-                            <div className="flex flex-col items-center">
-                                <span className="text-slate-400 text-[10px] sm:text-xs uppercase font-bold tracking-wider">Süre</span>
-                                <span className="text-2xl sm:text-3xl font-black font-mono bg-clip-text text-transparent bg-gradient-to-br from-amber-400 to-orange-400">{formatTime(timeElapsed)}</span>
-                            </div>
-                        </div>
 
-                        {/* Emoji Bar (Multiplayer) */}
-                        {gameMode === 'multi' && (
-                            <div className="flex items-center gap-1 bg-slate-800/50 px-3 py-1 rounded-2xl border border-slate-700/30">
-                                {['🔥','😂','😱','👀','💀','🏃'].map(e => (
-                                    <button key={e} onClick={() => sendEmoji(e)} className="text-xl hover:scale-125 transition-transform p-1">{e}</button>
-                                ))}
-                            </div>
-                        )}
+                            {/* Emoji Bar (Multiplayer) */}
+                            {gameMode === 'multi' && (
+                                <div className="flex flex-wrap md:flex-nowrap justify-center items-center gap-1 bg-slate-800/50 px-2 sm:px-3 py-1 sm:py-1 rounded-xl sm:rounded-2xl border border-slate-700/30 flex-shrink-0 max-w-[120px] sm:max-w-none">
+                                    {['🔥','😂','😱','👀','💀','🏃'].map(e => (
+                                        <button key={e} onClick={() => sendEmoji(e)} className="text-sm sm:text-xl hover:scale-125 transition-transform p-0.5 sm:p-1">{e}</button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -560,7 +562,7 @@ export default function GamePage() {
                     ))}
                 </div>
 
-                <div className="w-full flex flex-col xl:flex-row gap-4 px-2 sm:px-6 md:px-8 mt-6">
+                <div className="w-full flex flex-col xl:flex-row gap-3 sm:gap-4 px-2 sm:px-6 md:px-8 mt-3 sm:mt-6">
 
                     {/* Content Area */}
                     <main className="flex-1 relative order-1 xl:order-1 min-w-0">
@@ -571,7 +573,7 @@ export default function GamePage() {
                         )}
                         
                         <div className="wiki-wrapper w-full">
-                            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-black mb-4 border-b border-gray-300 pb-2 leading-tight break-words">
+                            <h1 className="text-2xl sm:text-4xl font-serif font-bold text-black mb-3 sm:mb-4 border-b border-gray-300 pb-2 leading-tight break-words">
                                 {currentPage}
                             </h1>
                             <div ref={contentRef} className="wiki-content" dangerouslySetInnerHTML={{ __html: pageHtml }} />

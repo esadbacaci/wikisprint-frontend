@@ -350,3 +350,55 @@ body {
   from { opacity: 0; transform: translateX(20px); }
   to { opacity: 1; transform: translateX(0); }
 }
+
+/* ========================================
+   RESPONSIVE DESIGN (MOBILE)
+   ======================================== */
+@media (max-width: 768px) {
+  .wiki-wrapper {
+    padding: 1rem;
+    border-radius: 0.5rem;
+  }
+
+  .wiki-content .infobox,
+  .wiki-content .sidebar {
+    float: none;
+    margin: 1em auto;
+    max-width: 100%;
+    width: 100%;
+    display: block !important;
+  }
+
+  .wiki-content .thumb {
+    float: none !important;
+    margin: 1em auto !important;
+    max-width: 100%;
+    display: block;
+  }
+
+  .wiki-content .thumbinner {
+    width: 100% !important;
+    max-width: 100%;
+  }
+
+  .wiki-content img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Reduce heading sizes on mobile */
+  .wiki-content h1, 
+  .wiki-content h2 {
+    font-size: 1.5em;
+  }
+  
+  .wiki-content h3 {
+    font-size: 1.25em;
+  }
+  
+  .wiki-content table.wikitable {
+    display: block !important;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
