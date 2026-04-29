@@ -227,6 +227,16 @@ export default function GamePage() {
         }
     };
 
+    const copyRoomCode = () => {
+        if (!roomId) return;
+        navigator.clipboard.writeText(roomId).then(() => {
+            addToast('Oda kodu kopyalandı!', 'success');
+        }).catch((err) => {
+            console.error('Kopyalama hatası:', err);
+            addToast('Kopyalama başarısız oldu.', 'error');
+        });
+    };
+
     // --- LINK CLICK HANDLER ---
     useEffect(() => {
         if (!contentRef.current || gameState !== 'playing') return;
@@ -408,9 +418,20 @@ export default function GamePage() {
                         <span className="text-4xl">🛋️</span> Bekleme Salonu
                     </h2>
                     
-                    <div className="bg-slate-900/60 py-4 px-8 rounded-2xl inline-block mb-8 border border-white/5 shadow-inner">
+                    <div className="bg-slate-900/60 py-4 px-6 rounded-2xl inline-block mb-8 border border-white/5 shadow-inner relative group">
                         <span className="text-slate-400 text-xs font-bold uppercase tracking-wider block mb-1">Oda Kodu</span>
-                        <p className="text-5xl font-mono font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400 tracking-widest">{roomId}</p>
+                        <div className="flex items-center justify-center gap-3">
+                            <p className="text-5xl font-mono font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400 tracking-widest">{roomId}</p>
+                            <button 
+                                onClick={copyRoomCode}
+                                className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-all border border-slate-700/50 hover:border-slate-500 hover:text-white"
+                                title="Kodu Kopyala"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
 
                     <div className="mb-8 text-left">
