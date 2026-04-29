@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
+import confetti from 'canvas-confetti';
 import { getPageContent, getRandomArticle } from '../services/wikiService';
 import { socket } from '../services/socket';
+import ToastContainer, { useToast } from '../components/Toast';
 
 export default function GamePage() {
+    const { toasts, addToast } = useToast();
     const [gameState, setGameState] = useState('menu'); // 'menu', 'lobby', 'playing', 'finished'
     const [gameMode, setGameMode] = useState('single'); // 'single', 'multi'
+    const [gameType, setGameType] = useState('speed'); // 'speed', 'clicks'
     
     // Core Game States
     const [startPage, setStartPage] = useState(null);
@@ -14,6 +18,8 @@ export default function GamePage() {
     const [loading, setLoading] = useState(false);
     const [clicks, setClicks] = useState(0);
     const [timeElapsed, setTimeElapsed] = useState(0);
+    const [sections, setSections] = useState([]);
+    const [isTocOpen, setIsTocOpen] = useState(true);
     
     // Multiplayer States
     const [playerName, setPlayerName] = useState('');
@@ -23,6 +29,11 @@ export default function GamePage() {
     const [hostId, setHostId] = useState('');
     const [winner, setWinner] = useState(null);
     const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(true);
+    const [floatingEmojis, setFloatingEmojis] = useState([]);
+    
+    // Lobby custom page selection
+    const [lobbyStartPage, setLobbyStartPage] = useState('');
+    const [lobbyEndPage, setLobbyEndPage] = useState('');
 
     const contentRef = useRef(null);
 
@@ -47,7 +58,8 @@ export default function GamePage() {
             setHostId(hostId);
         });
 
-        socket.on('game-started', async ({ startPage, targetPage, players }) => {
+        socket.on('game-started', async ({ startPage, targetPage, gameMode: gm, players }) => {
+            if (gm) setGameType(gm);
             setStartPage(startPage);
             setEndPage(targetPage);
             setCurrentPage(startPage);
@@ -60,10 +72,11 @@ export default function GamePage() {
                 setLoading(true);
                 const content = await getPageContent(startPage);
                 setPageHtml(content.text);
+                setSections(content.sections || []);
                 setGameState('playing');
             } catch (error) {
                 console.error("Error loading start page:", error);
-                alert("Başlangıç sayfası yüklenemedi!");
+                addToast('Başlangıç sayfası yüklenemedi!', 'error');
             } finally {
                 setLoading(false);
             }
@@ -80,7 +93,13 @@ export default function GamePage() {
         });
 
         socket.on('error', ({ message }) => {
-            alert(message);
+            addToast(message, 'error');
+        });
+
+        socket.on('emoji-received', ({ playerName, emoji }) => {
+            const id = Date.now() + Math.random();
+            setFloatingEmojis(prev => [...prev, { id, playerName, emoji }]);
+            setTimeout(() => setFloatingEmojis(prev => prev.filter(e => e.id !== id)), 3000);
         });
 
         return () => {
@@ -91,6 +110,7 @@ export default function GamePage() {
             socket.off('progress-updated');
             socket.off('game-finished');
             socket.off('error');
+            socket.off('emoji-received');
         };
     }, []);
 
@@ -104,6 +124,29 @@ export default function GamePage() {
         }
         return () => clearInterval(timer);
     }, [gameState, winner]);
+
+    // --- CONFETTI ---
+    useEffect(() => {
+        if (gameState === 'finished') {
+            const duration = 3 * 1000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 };
+
+            const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+            const interval = setInterval(function() {
+                const timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                const particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+            }, 250);
+        }
+    }, [gameState]);
 
     // --- ACTION HANDLERS ---
     
@@ -124,6 +167,7 @@ export default function GamePage() {
             
             const content = await getPageContent(start);
             setPageHtml(content.text);
+            setSections(content.sections || []);
             
             setGameState('playing');
         } catch (error) {
@@ -144,8 +188,8 @@ export default function GamePage() {
 
     // Multiplayer Join Room
     const joinRoom = () => {
-        if (!playerName.trim()) return alert("Lütfen bir isim girin");
-        if (!joinRoomId.trim()) return alert("Lütfen bir oda kodu girin");
+        if (!playerName.trim()) return addToast('Lütfen bir isim girin', 'warning');
+        if (!joinRoomId.trim()) return addToast('Lütfen bir oda kodu girin', 'warning');
         setGameMode('multi');
         socket.connect();
         socket.emit('join-room', { roomId: joinRoomId.toUpperCase(), playerName });
@@ -155,16 +199,30 @@ export default function GamePage() {
     const handleMultiplayerStart = async () => {
         setLoading(true);
         try {
-            let start = await getRandomArticle();
-            let end = await getRandomArticle();
+            let start = lobbyStartPage.trim() || await getRandomArticle();
+            let end = lobbyEndPage.trim() || await getRandomArticle();
             while (start === end) end = await getRandomArticle();
             
-            socket.emit('start-game', { roomId, startPage: start, targetPage: end });
+            socket.emit('start-game', { roomId, startPage: start, targetPage: end, gameMode: gameType });
         } catch (error) {
             console.error(error);
             alert("Rastgele makaleler getirilemedi.");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const randomizeLobbyPage = async (setter) => {
+        const title = await getRandomArticle();
+        setter(title);
+    };
+
+    const sendEmoji = (emoji) => {
+        if (gameMode === 'multi') {
+            socket.emit('send-emoji', { roomId, emoji });
+            const id = Date.now() + Math.random();
+            setFloatingEmojis(prev => [...prev, { id, playerName: 'Sen', emoji }]);
+            setTimeout(() => setFloatingEmojis(prev => prev.filter(e => e.id !== id)), 3000);
         }
     };
 
@@ -197,6 +255,7 @@ export default function GamePage() {
                     
                     const content = await getPageContent(targetTitle);
                     setPageHtml(content.text);
+                    setSections(content.sections || []);
                     
                     // Check Win Condition
                     if (targetTitle.toLowerCase() === endPage?.toLowerCase()) {
@@ -207,8 +266,7 @@ export default function GamePage() {
                         }
                     }
                 } catch (error) {
-                    console.error("Failed to load new page:", error);
-                    alert("Sayfa yüklenirken bir hata oluştu.");
+                    addToast('Sayfa yüklenirken bir hata oluştu.', 'error');
                 } finally {
                     setLoading(false);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -238,6 +296,8 @@ export default function GamePage() {
 
     if (gameState === 'menu') {
         return (
+            <>
+            <ToastContainer toasts={toasts} />
             <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-4 relative overflow-hidden">
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/10 blur-[120px]"></div>
                 <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-600/10 blur-[120px]"></div>
@@ -246,8 +306,27 @@ export default function GamePage() {
                     <h1 className="text-5xl sm:text-6xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-emerald-400 tracking-tighter">
                         WikiSprint
                     </h1>
-                    <p className="text-slate-400 mb-8">Hızlı oku, hızlı tıkla!</p>
+                    <p className="text-slate-400 mb-6">Hızlı oku, hızlı tıkla!</p>
                     
+                    {/* Game Type Selector */}
+                    <div className="flex gap-2 mb-6">
+                        <button
+                            onClick={() => setGameType('speed')}
+                            className={`flex-1 py-3 rounded-xl font-bold transition-all border ${gameType === 'speed' ? 'bg-amber-500/20 border-amber-500 text-amber-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}
+                        >
+                            ⚡ Hız Modu
+                        </button>
+                        <button
+                            onClick={() => setGameType('clicks')}
+                            className={`flex-1 py-3 rounded-xl font-bold transition-all border ${gameType === 'clicks' ? 'bg-blue-500/20 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}
+                        >
+                            🖱️ Tıklama Modu
+                        </button>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-6 -mt-4">
+                        {gameType === 'speed' ? 'En kısa sürede hedefe ulaş!' : 'En az tıklama ile hedefe ulaş!'}
+                    </p>
+
                     <div className="flex flex-col gap-4">
                         <button 
                             onClick={startSinglePlayer}
@@ -295,6 +374,7 @@ export default function GamePage() {
                     </div>
                 </div>
             </div>
+            </>
         );
     }
 
@@ -302,6 +382,8 @@ export default function GamePage() {
         const isHost = hostId === socket.id;
         
         return (
+            <>
+            <ToastContainer toasts={toasts} />
             <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-4">
                 <div className="bg-slate-800/80 backdrop-blur-md border border-slate-700 p-8 rounded-3xl shadow-2xl max-w-xl w-full text-center">
                     <h2 className="text-3xl font-black mb-2">Oda Bekleme Salonu</h2>
@@ -327,6 +409,55 @@ export default function GamePage() {
                         </div>
                     </div>
 
+                    {/* Game Type Selector (Host only) */}
+                    {isHost && (
+                        <div className="mb-6">
+                            <h3 className="text-slate-400 uppercase tracking-wider text-xs font-bold mb-3 px-2">Oyun Modu</h3>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setGameType('speed')}
+                                    className={`flex-1 py-3 rounded-xl font-bold transition-all border ${gameType === 'speed' ? 'bg-amber-500/20 border-amber-500 text-amber-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}
+                                >
+                                    ⚡ Hız Modu
+                                </button>
+                                <button
+                                    onClick={() => setGameType('clicks')}
+                                    className={`flex-1 py-3 rounded-xl font-bold transition-all border ${gameType === 'clicks' ? 'bg-blue-500/20 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}
+                                >
+                                    🖱️ Tıklama Modu
+                                </button>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-2 text-center">
+                                {gameType === 'speed' ? 'En kısa sürede hedefe ulaşan kazanır!' : 'En az tıklama ile hedefe ulaşan kazanır!'}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Custom Word Selection (Host only) */}
+                    {isHost && (
+                        <div className="mb-6 text-left">
+                            <h3 className="text-slate-400 uppercase tracking-wider text-xs font-bold mb-3 px-2">Makale Seçimi</h3>
+                            <div className="flex flex-col gap-3">
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" placeholder="Başlangıç makalesi (boş = rastgele)"
+                                        value={lobbyStartPage} onChange={e => setLobbyStartPage(e.target.value)}
+                                        className="flex-1 bg-slate-900/50 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                                    />
+                                    <button onClick={() => randomizeLobbyPage(setLobbyStartPage)} className="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-lg transition-colors" title="Rastgele">🎲</button>
+                                </div>
+                                <div className="flex gap-2">
+                                    <input 
+                                        type="text" placeholder="Hedef makalesi (boş = rastgele)"
+                                        value={lobbyEndPage} onChange={e => setLobbyEndPage(e.target.value)}
+                                        className="flex-1 bg-slate-900/50 border border-slate-600 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500 transition-colors"
+                                    />
+                                    <button onClick={() => randomizeLobbyPage(setLobbyEndPage)} className="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-lg transition-colors" title="Rastgele">🎲</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {isHost ? (
                         <button 
                             onClick={handleMultiplayerStart}
@@ -342,11 +473,14 @@ export default function GamePage() {
                     )}
                 </div>
             </div>
+            </>
         );
     }
 
     if (gameState === 'playing') {
         return (
+            <>
+            <ToastContainer toasts={toasts} />
             <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center pb-20 w-full relative">
                 
                 {/* HUD / Header */}
@@ -379,21 +513,39 @@ export default function GamePage() {
                                 <span className="text-2xl sm:text-3xl font-black font-mono bg-clip-text text-transparent bg-gradient-to-br from-amber-400 to-orange-400">{formatTime(timeElapsed)}</span>
                             </div>
                         </div>
+
+                        {/* Emoji Bar (Multiplayer) */}
+                        {gameMode === 'multi' && (
+                            <div className="flex items-center gap-1 bg-slate-800/50 px-3 py-1 rounded-2xl border border-slate-700/30">
+                                {['🔥','😂','😱','👀','💀','🏃'].map(e => (
+                                    <button key={e} onClick={() => sendEmoji(e)} className="text-xl hover:scale-125 transition-transform p-1">{e}</button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                <div className="w-full flex flex-col xl:flex-row gap-6 px-2 sm:px-6 md:px-8 mt-6">
-                    
+                {/* Floating Emojis */}
+                <div className="fixed top-20 right-6 z-[60] flex flex-col gap-2 pointer-events-none">
+                    {floatingEmojis.map(fe => (
+                        <div key={fe.id} className="bg-slate-800/90 backdrop-blur-sm px-4 py-2 rounded-2xl border border-slate-700 text-white text-sm animate-[slideIn_0.3s_ease-out] shadow-lg pointer-events-none">
+                            <span className="text-xl mr-2">{fe.emoji}</span><span className="text-slate-400">{fe.playerName}</span>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="w-full flex flex-col xl:flex-row gap-4 px-2 sm:px-6 md:px-8 mt-6">
+
                     {/* Content Area */}
-                    <main className="flex-1 relative order-2 xl:order-1">
+                    <main className="flex-1 relative order-1 xl:order-1 min-w-0">
                         {loading && (
-                            <div className="absolute inset-0 z-10 flex justify-center pt-32 bg-slate-900/40 backdrop-blur-[2px] rounded-3xl transition-all duration-300">
+                            <div className="absolute inset-0 z-10 flex justify-center pt-32 bg-slate-900/40 backdrop-blur-[2px] rounded-lg transition-all duration-300">
                                 <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin shadow-lg shadow-blue-500/20"></div>
                             </div>
                         )}
                         
                         <div className="wiki-wrapper w-full">
-                            <h1 className="text-3xl sm:text-5xl font-serif font-bold text-black mb-6 border-b border-gray-300 pb-2 leading-tight break-words">
+                            <h1 className="text-3xl sm:text-4xl font-serif font-bold text-black mb-4 border-b border-gray-300 pb-2 leading-tight break-words">
                                 {currentPage}
                             </h1>
                             <div ref={contentRef} className="wiki-content" dangerouslySetInnerHTML={{ __html: pageHtml }} />
@@ -402,7 +554,7 @@ export default function GamePage() {
 
                     {/* Multiplayer Leaderboard Sidebar */}
                     {gameMode === 'multi' && (
-                        <aside className={`flex-shrink-0 order-1 xl:order-2 transition-all duration-300 ${isLeaderboardOpen ? 'w-full xl:w-80' : 'w-full xl:w-16'}`}>
+                        <aside className={`flex-shrink-0 order-3 xl:order-3 transition-all duration-300 ${isLeaderboardOpen ? 'w-full xl:w-80' : 'w-full xl:w-16'}`}>
                             <div className="sticky top-28 bg-slate-800/80 backdrop-blur-md border border-slate-700/50 rounded-3xl p-4 shadow-2xl overflow-hidden flex flex-col">
                                 <div className="flex items-center justify-between mb-4">
                                     {isLeaderboardOpen && (
@@ -459,6 +611,7 @@ export default function GamePage() {
                     )}
                 </div>
             </div>
+            </>
         );
     }
 
@@ -467,14 +620,22 @@ export default function GamePage() {
         const winPlayer = isMulti ? winner : { name: 'Sen', clicks, timeElapsed };
         
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-4">
-                <div className="bg-slate-800 border-2 border-amber-500/30 p-8 sm:p-12 rounded-3xl shadow-[0_0_50px_-12px_rgba(245,158,11,0.3)] max-w-xl w-full text-center">
-                    <div className="w-24 h-24 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 text-5xl shadow-lg shadow-amber-500/30">
+            <>
+            <ToastContainer toasts={toasts} />
+            <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-4 relative overflow-hidden">
+                <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-amber-600/10 blur-[150px] animate-pulse"></div>
+                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-orange-600/10 blur-[150px] animate-pulse"></div>
+                
+                <div className="bg-slate-800/80 backdrop-blur-xl border border-amber-500/30 p-8 sm:p-12 rounded-[2rem] shadow-[0_0_80px_-15px_rgba(245,158,11,0.4)] max-w-xl w-full text-center z-10 animate-[slideIn_0.5s_ease-out]">
+                    <div className="w-28 h-28 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-8 text-6xl shadow-2xl shadow-amber-500/40 animate-bounce">
                         🏆
                     </div>
-                    <h2 className="text-4xl font-black text-white mb-2">Oyun Bitti!</h2>
+                    <h2 className="text-4xl font-black text-white mb-1">Oyun Bitti!</h2>
+                    <p className="text-xs text-slate-500 mb-4 uppercase font-bold tracking-wider">
+                        {gameType === 'speed' ? '⚡ Hız Modu' : '🖱️ Tıklama Modu'}
+                    </p>
                     <p className="text-slate-300 mb-8 text-lg">
-                        <span className="text-amber-400 font-bold">{winPlayer?.name}</span>, hedefe ilk ulaşan oldu!
+                        <span className="text-amber-400 font-bold">{winPlayer?.name}</span>, {gameType === 'speed' ? 'en hızlı şekilde hedefe ulaştı!' : 'en az tıklama ile hedefe ulaştı!'}
                     </p>
                     
                     {isMulti && (
@@ -525,8 +686,9 @@ export default function GamePage() {
                     </button>
                 </div>
             </div>
+            </>
         );
     }
 
-    return null;
+    return <ToastContainer toasts={toasts} />;
 }

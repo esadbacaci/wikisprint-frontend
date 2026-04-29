@@ -16,38 +16,36 @@ body {
 }
 
 /* 
- * CLASSIC WIKIPEDIA STYLES (Light Mode)
- * Gives the true Wikipedia vibe, respects inline colors and layouts.
+ * CLASSIC WIKIPEDIA STYLES
+ * Pixel-perfect recreation of Wikipedia's layout
  */
 .wiki-wrapper {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  padding: 2rem;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+  padding: 1.5rem 2rem;
+  overflow: hidden;
 }
 
 .wiki-content {
   color: #202122;
-  font-family: sans-serif;
-  font-size: 0.875rem; /* 14px */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Lato, Helvetica, Arial, sans-serif;
+  font-size: 14px;
   line-height: 1.6;
   overflow-wrap: break-word;
   word-wrap: break-word;
-  hyphens: auto;
 }
 
-/* Clearfix to prevent layout shifts from floating images/infoboxes */
+/* Clearfix */
 .wiki-content::after {
   content: "";
   display: table;
   clear: both;
 }
 
-.wiki-content h1, 
-.wiki-content h2, 
-.wiki-content h3, 
-.wiki-content h4, 
-.wiki-content h5 {
+/* Headings */
+.wiki-content h1,
+.wiki-content h2 {
   color: #000;
   font-family: 'Linux Libertine', Georgia, Times, serif;
   border-bottom: 1px solid #a2a9b1;
@@ -55,75 +53,146 @@ body {
   margin-top: 1em;
   margin-bottom: 0.25em;
   font-weight: normal;
-  clear: left;
+}
+
+.wiki-content h3,
+.wiki-content h4,
+.wiki-content h5 {
+  color: #000;
+  font-family: 'Linux Libertine', Georgia, Times, serif;
+  margin-top: 0.8em;
+  margin-bottom: 0.25em;
+  font-weight: bold;
+  border-bottom: none;
 }
 
 .wiki-content p {
   margin: 0.5em 0;
 }
 
-/* True Wikipedia Links */
-.wiki-content a {
-  color: #0645ad;
-  text-decoration: none;
+.wiki-content p:empty,
+.wiki-content p br:only-child {
+  display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
-.wiki-content a:hover {
-  text-decoration: underline;
-}
-.wiki-content a:visited {
-  color: #0b0080;
-}
-.wiki-content a.new {
-  color: #ba0000;
-}
+
+/* Links */
+.wiki-content a { color: #0645ad; text-decoration: none; }
+.wiki-content a:hover { text-decoration: underline; }
+.wiki-content a:visited { color: #0b0080; }
+.wiki-content a.new { color: #ba0000; }
 
 /* Lists */
 .wiki-content ul, .wiki-content ol {
   margin: 0.3em 0 0 1.6em;
   padding: 0;
 }
-.wiki-content li {
-  margin-bottom: 0.1em;
+.wiki-content li { margin-bottom: 0.1em; }
+.wiki-content dl { margin: 0.2em 0; }
+.wiki-content dd { margin-left: 1.6em; }
+
+/* ========================================
+   IMAGES & FLOATING ELEMENTS - BULLETPROOF
+   ======================================== */
+
+/* Thumbnails */
+.wiki-content .thumb {
+  margin: 0.5em 0 0.8em 1.4em;
+  clear: right;
+  float: right;
+  background-color: #f8f9fa;
+  border: 1px solid #c8ccd1;
+  padding: 3px;
+  font-size: 94%;
+  text-align: center;
+  overflow: hidden;
+  max-width: 300px;
 }
 
-/* Floating Elements (Infobox, Thumbnails) */
-.wiki-content .thumb, 
-.wiki-content .infobox, 
+.wiki-content .thumb.tleft,
+.wiki-content .tleft {
+  float: left !important;
+  clear: left;
+  margin: 0.5em 1.4em 0.8em 0;
+}
+
+.wiki-content .thumb.tright,
 .wiki-content .tright {
   float: right;
   clear: right;
-  margin: 0.5em 0 1.3em 1.4em;
-  background-color: #f8f9fa;
-  border: 1px solid #c8ccd1;
-  padding: 0.2em;
-  font-size: 88%;
+  margin: 0.5em 0 0.8em 1.4em;
 }
 
-.wiki-content .tleft {
-  float: left;
-  clear: left;
-  margin: 0.5em 1.4em 1.3em 0;
+.wiki-content .thumb.tnone,
+.wiki-content .tnone {
+  float: none !important;
+  clear: both;
+  margin: 0.5em auto;
+  display: table;
 }
 
 .wiki-content .thumbinner {
   border: none;
+  padding: 0;
   background: transparent;
+  overflow: hidden;
 }
 
-.wiki-content img {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Captions */
 .wiki-content .thumbcaption {
   padding: 3px;
   font-size: 94%;
+  line-height: 1.4;
+  text-align: left;
+  word-wrap: break-word;
 }
 
-/* Tables */
+.wiki-content .magnify { display: none; }
+
+/* Images - prevent overflow */
+.wiki-content img {
+  max-width: 100%;
+  height: auto !important;
+  vertical-align: middle;
+}
+
+/* Infoboxes */
+.wiki-content .infobox,
+.wiki-content .sidebar {
+  float: right;
+  clear: right;
+  margin: 0.5em 0 1em 1em;
+  background-color: #f8f9fa;
+  border: 1px solid #a2a9b1;
+  border-collapse: collapse;
+  font-size: 88%;
+  max-width: 300px;
+  display: table !important;
+}
+
+.wiki-content .infobox td,
+.wiki-content .infobox th {
+  border: 1px solid #a2a9b1;
+  padding: 0.2em 0.4em;
+  vertical-align: top;
+}
+
+.wiki-content .infobox th {
+  background-color: #eaecf0;
+  text-align: center;
+}
+
+.wiki-content .infobox img {
+  max-width: 100%;
+  height: auto !important;
+}
+
+/* ========================================
+   TABLES - STABLE
+   ======================================== */
 .wiki-content table {
   margin: 1em 0;
+  font-size: 100%;
 }
 
 .wiki-content table.wikitable {
@@ -132,27 +201,97 @@ body {
   margin: 1em 0;
   border: 1px solid #a2a9b1;
   border-collapse: collapse;
+  display: table !important;
+  max-width: 100%;
 }
 
 .wiki-content table.wikitable > tr > th,
 .wiki-content table.wikitable > tr > td,
-.wiki-content table.wikitable > tbody > tr > th,
-.wiki-content table.wikitable > tbody > tr > td {
+.wiki-content table.wikitable > * > tr > th,
+.wiki-content table.wikitable > * > tr > td {
   border: 1px solid #a2a9b1;
   padding: 0.2em 0.4em;
 }
 
 .wiki-content table.wikitable > tr > th,
-.wiki-content table.wikitable > tbody > tr > th {
+.wiki-content table.wikitable > * > tr > th {
   background-color: #eaecf0;
   text-align: center;
 }
 
-/* Hide Editor/Print stuff */
+/* Wide tables scroll horizontally */
+.wiki-content .wikitable-wrapper,
+.wiki-content .mw-parser-output > table:not(.infobox):not(.sidebar) {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* ========================================
+   NAVBOX, COLLAPSIBLE
+   ======================================== */
+.wiki-content .navbox {
+  margin: 1em 0;
+  display: table !important;
+  width: 100% !important;
+  max-width: 100%;
+  overflow-x: auto;
+  font-size: 88%;
+  border: 1px solid #a2a9b1;
+  clear: both;
+}
+
+.wiki-content .navbox-inner {
+  width: 100%;
+}
+
+/* ========================================
+   HIDE USELESS ELEMENTS
+   ======================================== */
 .wiki-content .mw-empty-elt,
 .wiki-content .mw-editsection,
-.wiki-content .noprint {
+.wiki-content .noprint,
+.wiki-content .sistersitebox,
+.wiki-content .metadata {
   display: none !important;
+}
+
+/* Table of Contents (TOC) Native Wikipedia Style */
+.wiki-content #toc,
+.wiki-content .toc {
+  display: table;
+  background-color: #f8f9fa;
+  border: 1px solid #a2a9b1;
+  padding: 1em;
+  font-size: 95%;
+  margin: 1em 0;
+}
+
+.wiki-content #toc h2,
+.wiki-content .toc h2 {
+  font-family: sans-serif;
+  font-size: 100%;
+  font-weight: bold;
+  border: none;
+  margin: 0 0 0.5em 0;
+  padding: 0;
+}
+
+.wiki-content #toc ul,
+.wiki-content .toc ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.wiki-content #toc ul ul,
+.wiki-content .toc ul ul {
+  margin: 0 0 0 2em;
+}
+
+.wiki-content #toc li,
+.wiki-content .toc li {
+  margin-bottom: 0.2em;
 }
 
 /* References */
@@ -170,10 +309,44 @@ body {
   border: 1px solid #eaecf0;
 }
 
-/* Overflows to prevent page stretching */
-.wiki-content .navbox,
-.wiki-content table {
+/* Gallery */
+.wiki-content .gallery {
+  margin: 0.5em 0;
+}
+
+.wiki-content .gallerybox {
+  display: inline-block;
+  vertical-align: top;
+  margin: 2px;
+}
+
+.wiki-content .gallerybox .thumb {
+  float: none;
+  margin: 0;
+  border: 1px solid #c8ccd1;
+}
+
+/* ========================================
+   PREVENT ALL LAYOUT SHIFTS
+   ======================================== */
+
+/* Force all positioned content to stay in flow */
+.wiki-content div[style*="position: absolute"],
+.wiki-content div[style*="position:absolute"] {
+  position: relative !important;
+}
+
+/* Prevent any element from breaking outside */
+.wiki-content * {
   max-width: 100%;
-  overflow-x: auto;
-  display: block;
+  box-sizing: border-box;
+}
+
+/* Removed overflow hidden on children to allow text wrapping around floats */
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
 }

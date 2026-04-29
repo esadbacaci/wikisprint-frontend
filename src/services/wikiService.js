@@ -19,7 +19,7 @@ export const getRandomArticle = async () => {
         const url = `https://tr.wikipedia.org/w/api.php?action=query&list=random&rnnamespace=0&rnlimit=1&format=json&origin=*`;
         const response = await fetch(url);
         const data = await response.json();
-        
+
         if (data.query && data.query.random && data.query.random.length > 0) {
             return data.query.random[0].title;
         }
