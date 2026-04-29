@@ -4,6 +4,7 @@ import { getPageContent, getRandomArticle } from '../services/wikiService';
 import { socket } from '../services/socket';
 import ToastContainer, { useToast } from '../components/Toast';
 import AutocompleteInput from '../components/AutocompleteInput';
+import { playClick, playPop, playWin } from '../services/soundService';
 
 export default function GamePage() {
     const { toasts, addToast } = useToast();
@@ -100,6 +101,7 @@ export default function GamePage() {
         });
 
         socket.on('emoji-received', ({ playerName, emoji }) => {
+            playPop();
             const id = Date.now() + Math.random();
             setFloatingEmojis(prev => [...prev, { id, playerName, emoji }]);
             setTimeout(() => setFloatingEmojis(prev => prev.filter(e => e.id !== id)), 3000);
@@ -128,9 +130,10 @@ export default function GamePage() {
         return () => clearInterval(timer);
     }, [gameState, winner]);
 
-    // --- CONFETTI ---
+    // --- CONFETTI & WIN ---
     useEffect(() => {
         if (gameState === 'finished') {
+            playWin();
             const duration = 3 * 1000;
             const animationEnd = Date.now() + duration;
             const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 };
@@ -223,6 +226,7 @@ export default function GamePage() {
 
     const sendEmoji = (emoji) => {
         if (gameMode === 'multi') {
+            playPop();
             socket.emit('send-emoji', { roomId, emoji });
             const id = Date.now() + Math.random();
             setFloatingEmojis(prev => [...prev, { id, playerName: 'Sen', emoji }]);
@@ -256,6 +260,7 @@ export default function GamePage() {
                 const targetTitle = rawTarget.replace(/_/g, ' ');
                 
                 try {
+                    playClick();
                     setLoading(true);
                     
                     setPageHistory(prev => [...prev, currentPage]);
@@ -303,6 +308,7 @@ export default function GamePage() {
         if (pageHistory.length === 0 || loading) return;
         const previousPage = pageHistory[pageHistory.length - 1];
         try {
+            playClick();
             setLoading(true);
             const newClicks = clicks + 1;
             setClicks(newClicks);
