@@ -396,8 +396,8 @@ export default function GamePage() {
                             {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : '🎮 Tek Oyunculu Oyna'}
                         </button>
                         
-                        <div className="w-full h-px bg-slate-700 my-4 relative">
-                            <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-slate-800 px-4 text-xs text-slate-500 uppercase font-bold">Veya Multiplayer</span>
+                        <div className="w-full h-px bg-slate-700/50 my-5 relative">
+                            <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-slate-800/80 backdrop-blur-sm border border-slate-700/50 px-4 py-1 rounded-full text-xs text-slate-400 uppercase font-bold tracking-wider">Veya Multiplayer</span>
                         </div>
 
                         <input 
