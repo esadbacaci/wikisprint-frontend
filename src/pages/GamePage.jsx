@@ -282,7 +282,7 @@ export default function GamePage() {
                     if (targetTitle.toLowerCase() === endPage?.toLowerCase()) {
                         const finalHistory = [...pageHistory, currentPage, targetTitle];
                         if (gameMode === 'single') {
-                            setPageHistory(finalHistory); // store final path for single player
+                            setPageHistory(finalHistory);
                             setGameState('finished');
                         } else {
                             socket.emit('finish-game', { roomId, timeElapsed, pageHistory: finalHistory });
@@ -756,26 +756,6 @@ export default function GamePage() {
                             <span className="text-amber-400 font-bold">{winPlayer?.name}</span>, {gameType === 'speed' ? 'en hızlı şekilde hedefe ulaştı!' : 'en az tıklama ile hedefe ulaştı!'}
                         </p>
 
-                        {winPlayer?.pageHistory && winPlayer.pageHistory.length > 0 && (
-                            <div className="bg-slate-900/60 rounded-2xl border border-slate-700/50 p-5 mb-8 text-left shadow-inner">
-                                <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
-                                    🗺️ Kazananın Rotası
-                                </h3>
-                                <div className="flex flex-wrap items-center gap-2 text-sm">
-                                    {winPlayer.pageHistory.map((page, idx) => (
-                                        <div key={idx} className="flex items-center gap-2">
-                                            <span className={`px-3 py-1.5 rounded-lg border font-medium ${idx === 0 ? 'bg-blue-900/40 border-blue-500/50 text-blue-300' : idx === winPlayer.pageHistory.length - 1 ? 'bg-emerald-900/40 border-emerald-500/50 text-emerald-300' : 'bg-slate-800 border-slate-600 text-slate-300'}`}>
-                                                {page}
-                                            </span>
-                                            {idx < winPlayer.pageHistory.length - 1 && (
-                                                <span className="text-slate-500 font-bold text-lg">→</span>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
                         {isMulti && (
                             <div className="bg-slate-900/50 rounded-2xl border border-slate-700 p-4 mb-8 text-left">
                                 <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-3">Sıralama</h3>
@@ -799,7 +779,7 @@ export default function GamePage() {
                         )}
 
                         {!isMulti && (
-                            <div className="grid grid-cols-2 gap-4 mb-10">
+                            <div className="grid grid-cols-2 gap-4 mb-8">
                                 <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-700">
                                     <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Geçen Süre</p>
                                     <p className="text-3xl font-black text-amber-400 font-mono">{formatTime(timeElapsed)}</p>
@@ -807,6 +787,26 @@ export default function GamePage() {
                                 <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-700">
                                     <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Toplam Tıklama</p>
                                     <p className="text-3xl font-black text-blue-400">{clicks}</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {winPlayer?.pageHistory && winPlayer.pageHistory.length > 0 && (
+                            <div className="bg-slate-900/40 rounded-2xl border border-slate-700 p-5 mb-8 text-left">
+                                <h3 className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <span className="text-lg">🗺️</span> Kazananın Rotası
+                                </h3>
+                                <div className="flex flex-wrap items-center gap-2 text-sm">
+                                    {winPlayer.pageHistory.map((step, idx) => (
+                                        <div key={idx} className="flex items-center gap-2">
+                                            <span className={`px-3 py-1.5 rounded-lg border ${idx === 0 ? 'bg-blue-600/20 border-blue-500/50 text-blue-300 font-bold' : idx === winPlayer.pageHistory.length - 1 ? 'bg-emerald-600/20 border-emerald-500/50 text-emerald-300 font-bold' : 'bg-slate-800 border-slate-600 text-slate-300'}`}>
+                                                {step}
+                                            </span>
+                                            {idx < winPlayer.pageHistory.length - 1 && (
+                                                <span className="text-slate-500">→</span>
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         )}
